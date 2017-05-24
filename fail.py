@@ -15,7 +15,6 @@ inputs, outputs = data_source.load(
 with tf.Session() as session:
     session.run(tf.global_variables_initializer())
     for epoch in range(1000):
-        print('Epoch {}'.format(epoch))
         x_seq = inputs[0:20]
         y_seq = outputs[0:20]
         err_total = 0
@@ -26,4 +25,4 @@ with tf.Session() as session:
             err, _ = session.run((loss, optimize),
                                  feed_dict={x: x_seq, y_: y_seq})
             err_total = err_total + err
-        print('Avg loss: {}'.format(err_total / 15))
+        print('Epoch {} - avg loss: {}'.format(epoch, err_total / 15))
