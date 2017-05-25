@@ -1,7 +1,7 @@
 """ Reads input / output image data"""
 
 from os import listdir
-from os.path import join
+from os.path import join, exists
 import numpy as np
 
 
@@ -9,9 +9,14 @@ def load(data_dir):
     """
     Read input data from the given directory
     """
-    inputs = []
-    for data_file in listdir(data_dir):
-        inputs.append(np.genfromtxt(join(data_dir, data_file)) / 10)
+    if exists('_data_cache.npy'):
+        return np.load('_data_cache.npy')
+    else:
+        inputs = []
+        for data_file in listdir(data_dir):
+            if data_file.endswith('.txt'):
+                inputs.append(np.genfromtxt(join(data_dir, data_file)) / 10)
+        np.save('_data_cache', inputs)
     return inputs
 
 

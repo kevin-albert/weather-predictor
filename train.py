@@ -1,13 +1,14 @@
 """ Failing Convolutional RNN Implementation"""
 
 import tensorflow as tf
+import numpy as np
 import matplotlib.pyplot as plt
 import data_source
 from model import RadarNet
 
 seq_length = 20
 washout = 20
-sample = 150
+sample = 500
 epochs = 100
 
 print('Building model')
@@ -43,9 +44,9 @@ with tf.Session() as session:
 
         # sample run
         network.reset_state()
-        network.washout(session, inputs[0:washout])
-        sample_start = washout
-        sample_end = min(N, sample_start + sample)
+        sample_start = np.random.randint(washout, N - sample)
+        network.washout(session, inputs[0:sample_start])
+        sample_end = sample_start + sample
         x_seq = inputs[sample_start:sample_end]
         y_seq = outputs[sample_start:sample_end]
         y, loss = network.test_seq(session, x_seq, y_seq)
