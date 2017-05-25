@@ -5,20 +5,28 @@ from os.path import join
 import numpy as np
 
 
-def load(data_dir, pred_distance=15, pos_x=116, pos_y=116, size=8):
+def load(data_dir):
     """
-    Read input data from the given location
-    Generate output data for each frame at t+pred_distance
+    Read input data from the given directory
     """
-    print('Loading data from {}...'.format(data_dir))
     inputs = []
-    outputs = []
-    pos_x = pos_x - int(size / 2)
-    pos_y = pos_y - int(size / 2)
     for data_file in listdir(data_dir):
-        inputs = inputs + [np.genfromtxt(join(data_dir, data_file)) / 8]
+        inputs.append(np.genfromtxt(join(data_dir, data_file)) / 10)
+    return inputs
+
+
+def generate_targets(inputs, pred_distance, pos, size):
+    """
+    Generate target outputs by sampling the max of area at pos
+
+    inputs: format given by load()
+    pred_distance: how many sequence steps to look ahead
+    pos: array or tuple of (x, y)
+    size: int - width & height of square to inspect
+    """
+    outputs = []
+    pos = (pos[0] - size // 2, pos[1] - size // 2)
     for i in range(pred_distance, len(inputs)):
-        pool = inputs[i][pos_y:pos_y + size, pos_x:pos_x + size]
+        pool = inputs[i][pos[1]:pos[1] + size, pos[0]:pos[0] + size]
         outputs = outputs + [np.max(pool)]
-    print('Done')
-    return inputs, outputs
+    return outputs
