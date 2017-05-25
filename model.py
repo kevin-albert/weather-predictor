@@ -63,7 +63,7 @@ class RadarNet:
             [50, 1], stddev=1 / np.sqrt(50)))
         b_out4 = tf.Variable(tf.truncated_normal([1], stddev=0.1))
 
-        y = tf.tanh(tf.reshape(h_outputs3, [-1, 50]) @ W_out4 + b_out4)
+        y = tf.sigmoid(tf.reshape(h_outputs3, [-1, 50]) @ W_out4 + b_out4)
 
         # Loss, optimization
         y_ = tf.placeholder(tf.float32, shape=[None])

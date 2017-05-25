@@ -3,54 +3,72 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-import data_source
+import visual
+from data_source import load_data, generate_targets
 from model import RadarNet
 
+# predict this many frames in advance
+pred_distance = 5
+
+# predict for this area
+target_size = 5
+target_location = (118, 148)
+
+# sequence length for bptt
 seq_length = 20
-washout = 20
-sample = 500
+
+# iterate through this many frames before training
+washout = 10
+
+# fraction of frames to reserve for testing
+test = 0.1
+
+# iterate over training data this many times
 epochs = 100
 
 print('Building model')
 network = RadarNet()
 
-
 print('Loading input data')
-inputs = data_source.load('data')
+train_inputs, test_inputs = load_data('data', test_rate=test)
 print('Generating target outputs')
-outputs = data_source.generate_targets(inputs, 5, (118, 148), 5)
-N = len(outputs)
+train_outputs = generate_targets(train_inputs, pred_distance,
+                                 target_location, target_size)
+test_outputs = generate_targets(test_inputs, pred_distance,
+                                target_location, target_size)
 
-# remove data that we aren't predicting with
-inputs = inputs[0:N]
-print('Data length: {}'.format(N))
+train_inputs = train_inputs[0:len(train_outputs)]
+test_inputs = test_inputs[0:len(test_outputs)]
+
+
+print('Data length: train={}, test={}'.format(
+    len(train_outputs), len(test_outputs)))
 
 with tf.Session() as session:
     session.run(tf.global_variables_initializer())
     err_plot = []
+    sample_inputs = []
     sample_expected = []
     sample_actual = []
     print('Training...')
     for epoch in range(epochs):
         network.reset_state()
-        network.washout(session, inputs[0:washout])
+        network.washout(session, train_inputs[0:washout])
 
-        for seq in range(washout, N, seq_length):
-            max_length = min(N - seq, seq_length)
+        # train
+        for seq in range(washout, len(train_outputs), seq_length):
+            max_length = min(len(train_outputs) - seq, seq_length)
             seq_end = seq + max_length
-            x_seq = inputs[seq:seq + max_length]
-            y_seq = outputs[seq:seq + max_length]
+            x_seq = train_inputs[seq:seq + max_length]
+            y_seq = train_outputs[seq:seq + max_length]
             network.train_seq(session, x_seq, y_seq)
 
-        # sample run
+        # sample
         network.reset_state()
-        sample_start = np.random.randint(washout, N - sample)
-        network.washout(session, inputs[0:sample_start])
-        sample_end = sample_start + sample
-        x_seq = inputs[sample_start:sample_end]
-        y_seq = outputs[sample_start:sample_end]
+        network.washout(session, test_inputs[0:washout])
+        x_seq = test_inputs[washout:]
+        y_seq = test_outputs[washout:]
         y, loss = network.test_seq(session, x_seq, y_seq)
-
         err_plot.append(loss)
         if epoch % 10 == 0:
             print('[{: >6}] loss: {}'.format(epoch, loss))
@@ -59,16 +77,7 @@ with tf.Session() as session:
         if epoch == epochs - 1:
             sample_expected = y_seq
             sample_actual = y
+            sample_inputs = x_seq
 
     print('Done')
-    plt.figure(1)
-    plt.subplot(211)
-    plt.plot(err_plot)
-    plt.legend('Mean squared error')
-    plt.xlabel('Epoch')
-    plt.subplot(212)
-    plt.plot(range(len(sample_expected)), sample_expected)
-    plt.plot(range(len(sample_expected)), sample_actual)
-    plt.legend(['Real', 'Predicted'])
-    plt.axis([0, len(sample_expected), 0, 1])
-    plt.show()
+    visual.animate(x_seq, y_seq, y)

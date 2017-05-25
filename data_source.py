@@ -5,19 +5,21 @@ from os.path import join, exists
 import numpy as np
 
 
-def load(data_dir):
+def load_data(data_dir, test_rate=None):
     """
     Read input data from the given directory
     """
-    if exists('_data_cache.npy'):
-        return np.load('_data_cache.npy')
+    inputs = []
+    if exists(join(data_dir, '_cache.npy')):
+        inputs = np.load(join(data_dir, '_cache.npy'))
     else:
         inputs = []
-        for data_file in listdir(data_dir):
+        for data_file in sorted(listdir(data_dir)):
             if data_file.endswith('.txt'):
                 inputs.append(np.genfromtxt(join(data_dir, data_file)) / 10)
-        np.save('_data_cache', inputs)
-    return inputs
+        np.save(join(data_dir, '_cache'), inputs)
+    num_train = int(len(inputs) * (1 - test_rate))
+    return inputs[0:num_train], inputs[num_train:]
 
 
 def generate_targets(inputs, pred_distance, pos, size):
@@ -33,5 +35,12 @@ def generate_targets(inputs, pred_distance, pos, size):
     pos = (pos[0] - size // 2, pos[1] - size // 2)
     for i in range(pred_distance, len(inputs)):
         pool = inputs[i][pos[1]:pos[1] + size, pos[0]:pos[0] + size]
-        outputs = outputs + [np.max(pool)]
+        val = 0
+        # take min of each 2x2 square and max of that
+        for j in range(0, size, 2):
+            for k in range(0, size, 2):
+                minpool = np.min(pool[j:j + 1, k:k + 1])
+                if minpool > val:
+                    val = minpool
+        outputs = outputs + [val]
     return outputs
