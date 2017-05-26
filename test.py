@@ -9,10 +9,12 @@ s3 = boto3.resource('s3')
 bucket = s3.Bucket('noaa-nexrad-level2')
 s3key = '2016/12/15/KMUX/KMUX20161215_104149_V06'
 
-# download to a local file, and read it
-localfile = tempfile.mktemp()
-bucket.download_file(s3key, localfile)
+# download to a local file-like object, and read it
+localfile = tempfile.SpooledTemporaryFile()
+bucket.download_fileobj(s3key, localfile)
+localfile.seek(0)
 radar = pyart.io.read_nexrad_archive(localfile)
+localfile.close()
 
 # mask out last 10 gates of each ray, this removes the "ring" around the radar.
 radar.fields['reflectivity']['data'][:, -10:] = np.ma.masked
