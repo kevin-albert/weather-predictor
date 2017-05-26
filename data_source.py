@@ -20,7 +20,9 @@ def load_data(data_dir, test_rate=None):
                 inputs.append(np.genfromtxt(join(data_dir, data_file)) / 10)
             elif data_file.endswith('.nc4'):
                 grid = pyart.io.read_grid(join(data_dir, data_file))
-                inputs.append(grid.fields['reflectivity']['data'][0])
+                # [0] is a NumPy Masked Array
+                masked_grid = grid.fields['reflectivity']['data'][0]
+                inputs.append(masked_grid)
         np.save(join(data_dir, '_cache'), inputs)
     num_train = int(len(inputs) * (1 - test_rate))
     return inputs[0:num_train], inputs[num_train:]

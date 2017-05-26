@@ -29,9 +29,9 @@ class RadarNet:
         """
 
         # Input manipulation
-        x = tf.placeholder(tf.float32, shape=[None, 232, 232])
+        x = tf.placeholder(tf.float32, shape=[None, 241, 241])
         x_img = tf.image.resize_bicubic(
-            tf.reshape(x, [-1, 232, 232, 1]),
+            tf.reshape(x, [-1, 241, 241, 1]),
             [64, 64])
 
         # CNN Layer

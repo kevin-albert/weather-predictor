@@ -91,7 +91,7 @@ def load_test():
     plt.show()
 
 
-download_and_save('2016/12/15', 'KMUX', 'data')
+download_and_save('2016/12/16', 'KMUX', 'data')
 # load_test()
 
 # # create the plot
